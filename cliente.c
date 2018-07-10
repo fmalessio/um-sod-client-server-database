@@ -260,7 +260,11 @@ void MostrarCatalogo(int idsockc)
     sleep(1);
     nb = read(idsockc, buf, BUFFER);
 	buf[nb] = '\0';
-	printf("\nCatalogo: \n %s", buf);
+	printf("\nCatalogo MySQL: \n %s", buf);
+
+	nb = read(idsockc, buf, BUFFER);
+	buf[nb] = '\0';
+	printf("\nCatalogo PostgreSQL: \n %s", buf);
 
 	printf("\nPresione una tecla para volver.");
 	getchar();

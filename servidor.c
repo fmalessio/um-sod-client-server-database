@@ -222,5 +222,9 @@ void EjecutarQueryYEnviarResultado(int idsockc)
 	close(idsockc);
 }
 void MostrarCatalogo(int idsockc){
-    //todo
+    //TODO refactor
+    printf("\nMostrar catalogo \n");
+
+    funcionMysql(idsockc, "SHOW FULL TABLES FROM autosdb");
+    funcionPostgresql(idsockc, "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';");
 }
