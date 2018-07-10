@@ -17,16 +17,17 @@
 #define IPPostgrsql "127.0.0.1"
 #define PuertoPostgresql "5432"
 
-void funcionPostgresql(int idsockc);
-void funcionMysql(int idsockc);
+void funcionPostgresql(int idsockc, char * query);
+void funcionMysql(int idsockc, char * query);
 void funcionHilo(void);
 void EjecutarQueryYEnviarResultado(int idsockc);
+void MostrarCatalogo(int idsockc);
 
 struct sockaddr_in c_sock;
 int idsockc=0;
 
 int main(int argc, char *argv[])
-{	
+{
 	struct sockaddr_in s_sock;
 	int idsocks;
 	int lensock = sizeof(struct sockaddr_in);
@@ -39,13 +40,13 @@ int main(int argc, char *argv[])
 	memset(s_sock.sin_zero,0,8);
 	printf("bind %d\n", bind(idsocks,(struct sockaddr *) &s_sock,lensock));
 	printf("listen %d\n", listen(idsocks,5));
-	
+
 	while(1)
 	{
 		printf("Servidor esperando conexion...\n");
 		idsockc = accept(idsocks,(struct sockaddr *)&c_sock,&lensock);
 		if(idsockc != -1)
-		{			
+		{
 			pthread_t hilo;
 			pthread_create(&hilo, NULL, (void*)funcionHilo, NULL);
 		}
@@ -54,7 +55,7 @@ int main(int argc, char *argv[])
 			printf("Conexion rechazada %d!\n", idsockc);
 		}
 	}
-	
+
 	return 0 ;
 }
 
@@ -65,27 +66,18 @@ void funcionHilo(void)
 	pthread_exit(0);
 }
 
-void funcionMysql(int idsockc)
+void funcionMysql(int idsockc, char * query)
 {
 	MYSQL *conn;
 	MYSQL_RES *res;
 	MYSQL_ROW row;
 	char *server = "localhost";
 	char *user = "root";
-	char *password = "toor";  
+	char *password = "toor";
 	char *database = "autosdb";
 	int nb;
-	char * query = (char *)malloc(BUFFER);
-	memset(query, 0, BUFFER);
-	
-	conn = mysql_init(NULL);
-	
-	
-	// Recibe el nombre del archivo
-	nb = read(idsockc, query, BUFFER);
-	// query[nb] = '\0';
-	printf("\nRecibido del cliente %d: query: %s \n", idsockc, query);
 
+	conn = mysql_init(NULL);
    /* Connect to database */
    if (!mysql_real_connect(conn, server,
          user, password, database, 0, NULL, 0)) {
@@ -130,29 +122,21 @@ void funcionMysql(int idsockc)
 	   }
 	   printf("\n");
 	}
-  
+
    /* close connection */
    mysql_free_result(res);
    mysql_close(conn);
    write(idsockc, "Respuesta", 1024);
 }
 
-void funcionPostgresql(int idsockc)
+void funcionPostgresql(int idsockc, char * query)
 {
 	PGconn *conn;
 	PGresult *res;
 	int i,j;
 	char respuesta[BUFFER];
 	memset(respuesta, 0, BUFFER);
-	
-	int nb;
-	char * query = (char *)malloc(BUFFER);
-	memset(query, 0, BUFFER);
-	// Recibe el nombre del archivo
-	nb = read(idsockc, query, BUFFER);
-	// query[nb] = '\0';
-	printf("\nRecibido del cliente %d: query: %s \n", idsockc, query);
-	
+
 	conn =  PQsetdbLogin(IPPostgrsql, PuertoPostgresql, NULL, NULL, "sodsql", "postgres", "toor");
 	if (PQstatus(conn) != CONNECTION_BAD)
 	{
@@ -164,7 +148,7 @@ void funcionPostgresql(int idsockc)
 				for (j = 0 ; j < PQnfields(res); j++)
 				{
 					strcat(respuesta,PQgetvalue(res,i,j));
-					strcat(respuesta,"\t");                     
+					strcat(respuesta,"\t");
 					printf("%s\t", PQgetvalue(res,i,j));
 				}
 				strcat(respuesta,"\n");
@@ -185,33 +169,49 @@ void funcionPostgresql(int idsockc)
 void EjecutarQueryYEnviarResultado(int idsockc)
 {
 	char * buf = (char *)malloc(BUFFER);
-	int nb; 
+	int nb;
 	char * tipoDB = (char *)malloc(10);
 	memset(tipoDB, 0, 10);
-	
+    char * query = (char *)malloc(BUFFER);
+
 	printf("Conexion aceptada desde el cliente %d.\n", idsockc);
-	
+
 	// Leemos la opcion de la base (1=mysql, 2=postgres, 0=salir)
 	nb = read(idsockc, tipoDB, 10);
-	
+
 	tipoDB[nb] = '\0';
 	printf("\nRecibido del cliente %d: %s \n", idsockc, tipoDB);
+
+
 
 	while(strncmp(tipoDB, "0", 1) != 0)
 	{
 		if (strncmp(tipoDB, "1", 1) == 0) // mysql
 		{
+		    memset(query, 0, BUFFER);
+            nb = read(idsockc, query, BUFFER);
+            printf("\nRecibido del cliente %d: query: %s \n", idsockc, query);
+
 			printf("\nEjecutamos funcion MYSQL %s \n", tipoDB);
 			fflush(stdin);
-			funcionMysql(idsockc);
+			funcionMysql(idsockc, query);
 		}
 		if (strncmp(tipoDB, "2", 1) == 0) // postgres
 		{
+            memset(query, 0, BUFFER);
+            nb = read(idsockc, query, BUFFER);
+            printf("\nRecibido del cliente %d: query: %s \n", idsockc, query);
+
 			printf("\nEjecutamos funcion POSTGRES %s \n", tipoDB);
 			fflush(stdin);
-			funcionPostgresql(idsockc);
-		}		
-	
+			funcionPostgresql(idsockc, query);
+		}
+        if (strncmp(tipoDB, "3", 1) == 0) // catalogo
+		{
+			printf("\nEjecutamos print de catalogo \n");
+			fflush(stdin);
+			MostrarCatalogo(idsockc);
+		}
 		printf("\nIterando ciclo de comandos\n");
 		sleep(1);
 		nb = read(idsockc, tipoDB, BUFFER);
@@ -219,5 +219,8 @@ void EjecutarQueryYEnviarResultado(int idsockc)
 		printf("\nRecibido del cliente %d: %s\n", idsockc, tipoDB);
 	 }
 	printf("\nCerrando conexión del cliente %d.\n", idsockc);
-	close(idsockc); 
+	close(idsockc);
+}
+void MostrarCatalogo(int idsockc){
+    //todo
 }

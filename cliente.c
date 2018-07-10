@@ -17,6 +17,7 @@ void EnviarQuery(int idsockc);
 void EnviarRecibirMensaje(int idsockc, char *msj);
 void EditarArchivo();
 void EnviarArchivoServidor(int idsockc);
+void MostrarCatalogo(int idsockc);
 char* SeleccionarBase();
 
 int main (int argc, char *argv[])
@@ -64,7 +65,7 @@ int main (int argc, char *argv[])
 				} break;
 				case 2:
 				{
-		//			EditarArchivo();
+					MostrarCatalogo(idsockc);
 				} break;
 				case 3:
 				{
@@ -116,15 +117,15 @@ char* SeleccionarBase()
 
 	scanf("%s",&op);
 	fflush(stdin);
-	
+
 	return op;
-}	
+}
 
 void EnviarQuery(int idsockc)
 {
 	//char* opDB = (char *) malloc(2);
 	//memset(opDB, 0, 2);
-	
+
 	//strcpy(opDB, SeleccionarBase());
 	//char * op = (char *) malloc(1);
 	//memset(op, 0, 1);
@@ -138,14 +139,14 @@ void EnviarQuery(int idsockc)
 
 	scanf("%d",&op);
 	fflush(stdin);
-	
+
 	printf("\nBase de datos selccionada %d: ", op);
-	
+
 	// Escribimos comando para enviar un archivo
-	
+
 	if(op == 1){
 		write(idsockc, "1", 1);
-	} 
+	}
 	else {
 		if(op == 2)
 			write(idsockc, "2", 1);
@@ -168,7 +169,7 @@ void EnviarQuery(int idsockc)
 
 	char query[2048];
 	char enter;
-	
+
 	/*printf("Lista de archivos disponibles: \n");
 	system("ls");
 	printf("Ingrese el nombre del archivo que quiere enviar: \n");
@@ -180,11 +181,11 @@ void EnviarQuery(int idsockc)
 		printf("\nNo se puede abrir el archivo!");
 		exit(0);
 	}*/
-	
+
  //   strcpy(query, "select * from empleado");
 	printf("\nIngrese la query: \n");
 	//fflush(stdin);
-	scanf("%c", &enter);	
+	scanf("%c", &enter);
 	gets(query);
 	printf("\nQuery: %s", query);
 	write(idsockc, query, BUFFER);
@@ -226,7 +227,7 @@ void EnviarQuery(int idsockc)
 			printf("2\n");
 		}
 	}*/
-	
+
 	// Recibe el nombre del archivo
 	nb = read(idsockc, buf, BUFFER);
 	buf[nb] = '\0';
@@ -250,4 +251,18 @@ void EditarArchivo() {
 
 	// Abrimos la edicion
 	system("gedit archivo1.txt");
+}
+void MostrarCatalogo(int idsockc)
+{
+    char * buf = (char *)malloc(BUFFER);
+	int nb;
+    write(idsockc, "3", 1);//mostrar catalogo
+    sleep(1);
+    nb = read(idsockc, buf, BUFFER);
+	buf[nb] = '\0';
+	printf("\nCatalogo: \n %s", buf);
+
+	printf("\nPresione una tecla para volver.");
+	getchar();
+	getchar();
 }
