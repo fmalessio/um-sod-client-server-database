@@ -18,6 +18,7 @@ void EnviarRecibirMensaje(int idsockc, char *msj);
 void EditarArchivo();
 void EnviarArchivoServidor(int idsockc);
 void MostrarCatalogo(int idsockc);
+void EjecutarQueryPredefinida(int idsockc);
 char* SeleccionarBase();
 
 int main (int argc, char *argv[])
@@ -47,9 +48,9 @@ int main (int argc, char *argv[])
 			printf("************** \n");
 			printf("**** MENU **** \n");
 			printf("************** \n");
-			printf("1. Ejecutar Query \n");
+			printf("1. Ejecutar Query Manual \n");
 			printf("2. Mostrar Catálogo \n");
-			printf("3. Ingresar Query \n");
+			printf("3. Ejecutar Query Predefinida\n");
 			printf("0. Salir \n");
 			printf("\n\nOpcion: ");
 
@@ -69,7 +70,7 @@ int main (int argc, char *argv[])
 				} break;
 				case 3:
 				{
-				//	EnviarArchivoServidor(idsockc);
+					EjecutarQueryPredefinida(idsockc);
 				} break;
 			}
 		} while(op != 0);
@@ -264,6 +265,55 @@ void MostrarCatalogo(int idsockc)
 	nb = read(idsockc, buf, BUFFER);
 	buf[nb] = '\0';
 	printf("\nCatalogo PostgreSQL: \n %s", buf);
+
+	printf("\nPresione una tecla para volver.");
+	getchar();
+	getchar();
+}
+
+void EjecutarQueryPredefinida(int idsockc){
+int op;
+	system("clear");
+	printf("************** \n");
+	printf("\nEjecutar query predefinida para:\n");
+	printf("1. MySQL \n");
+	printf("2. PostgreSQL\n");
+	printf("0. Salir \n");
+	printf("\n\nOpcion: ");
+
+	scanf("%d",&op);
+	fflush(stdin);
+
+	printf("\nBase de datos selccionada %d: ", op);
+
+	// Escribimos comando para enviar un archivo
+	if(op == 1){
+		write(idsockc, "4", 1);
+	}
+	else {
+		if(op == 2)
+			write(idsockc, "5", 1);
+		else {
+			printf("\nPresione una tecla para volver.");
+			getchar();
+			return;
+		}
+	}
+
+	char * buf = (char *)malloc(BUFFER);
+	int nb, times, i;
+    sleep(1);
+
+	nb = read(idsockc, buf, 1);
+	times = buf[0]-48;
+	buf[nb] = '\0';
+	printf("\nCantidad de consutlas: %d\n", times);
+
+    for(i=0; i<times; i++){
+        nb = read(idsockc, buf, BUFFER);
+        buf[nb] = '\0';
+        printf("\nConsulta tabla %d: \n%s", i, buf);
+    }
 
 	printf("\nPresione una tecla para volver.");
 	getchar();
