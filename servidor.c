@@ -22,6 +22,8 @@ void funcionMysql(int idsockc, char * query);
 void funcionHilo(void);
 void EjecutarQueryYEnviarResultado(int idsockc);
 void MostrarCatalogo(int idsockc);
+void EjecutarConsultasPredefinidasPostgreSQL(int idsockc);
+void EjecutarConsultasPredefinidasMySQL(int idsockc);
 
 struct sockaddr_in c_sock;
 int idsockc=0;
@@ -212,6 +214,18 @@ void EjecutarQueryYEnviarResultado(int idsockc)
 			fflush(stdin);
 			MostrarCatalogo(idsockc);
 		}
+		if ( (strncmp(tipoDB, "4", 1) == 0) || (strncmp(tipoDB, "5", 1) == 0)) // catalogo
+		{
+			printf("\nEjecutamos print de catalogo \n");
+			fflush(stdin);
+			if(strncmp(tipoDB, "4", 1) == 0){
+                EjecutarConsultasPredefinidasMySQL(idsockc);
+            }
+            else{
+                EjecutarConsultasPredefinidasPostgreSQL(idsockc);
+            }
+		}
+
 		printf("\nIterando ciclo de comandos\n");
 		sleep(1);
 		nb = read(idsockc, tipoDB, BUFFER);
@@ -227,4 +241,21 @@ void MostrarCatalogo(int idsockc){
 
     funcionMysql(idsockc, "SELECT table_name FROM information_schema.tables where table_schema='autosdb';");
     funcionPostgresql(idsockc, "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';");
+}
+void EjecutarConsultasPredefinidasMySQL(int idsockc){
+    printf("\nConsultas Predefinidas MySQL:\n");
+
+    write(idsockc, "1", 1);
+
+    funcionMysql(idsockc, "SELECT * from autos");
+}
+
+void EjecutarConsultasPredefinidasPostgreSQL(int idsockc){
+    printf("\nConsultas Predefinidas PostgreSQL:\n");
+
+    write(idsockc, "3", 1);
+
+    funcionPostgresql(idsockc, "SELECT * from employees");
+    funcionPostgresql(idsockc, "SELECT * from pepe");
+    funcionPostgresql(idsockc, "SELECT * from empleado");
 }
