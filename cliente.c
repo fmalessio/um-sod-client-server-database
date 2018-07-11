@@ -82,9 +82,7 @@ int main (int argc, char *argv[])
 	}
 
 	printf("\nDesconectando del servidor: %d.\n\n", idsockc);
-
-	write(idsockc, "salir", 5);
-
+	write(idsockc, "0", 1);
 	close(idsockc);
 }
 
@@ -183,11 +181,12 @@ void EnviarQuery(int idsockc)
 		exit(0);
 	}*/
 
- //   strcpy(query, "select * from empleado");
+ 	// strcpy(query, "select * from empleado");
 	printf("\nIngrese la query: \n");
 	//fflush(stdin);
 	scanf("%c", &enter);
 	gets(query);
+
 	printf("\nQuery: %s", query);
 	write(idsockc, query, BUFFER);
 

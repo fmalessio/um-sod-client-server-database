@@ -24,6 +24,7 @@ void EjecutarQueryYEnviarResultado(int idsockc);
 void MostrarCatalogo(int idsockc);
 void EjecutarConsultasPredefinidasPostgreSQL(int idsockc);
 void EjecutarConsultasPredefinidasMySQL(int idsockc);
+char * DetectarTipoQuery(char * query);
 
 struct sockaddr_in c_sock;
 int idsockc=0;
@@ -78,6 +79,10 @@ void funcionMysql(int idsockc, char * query)
 	char *password = "toor";
 	char *database = "autosdb";
 	int nb;
+	// tipo query
+	char * tipoQuery = (char *)malloc(10);
+	memset(tipoQuery, 0, 10);
+	tipoQuery = DetectarTipoQuery(query);
 
 	conn = mysql_init(NULL);
    /* Connect to database */
@@ -99,36 +104,43 @@ void funcionMysql(int idsockc, char * query)
 //   while ((row = mysql_fetch_row(res)) != NULL)
 //      printf("%s \n", row[0]);
 
-   /* send SQL query */
-   if (mysql_query(conn, query)) { // "SELECT * from autos"
-      fprintf(stderr, "%s\n", mysql_error(conn));
-      exit(1);
-   }
+	// TODO: pasar esto a funciones MySQLResulado(R=read), MySQLSinResultado(C,U,D)
+	if(strncmp(tipoQuery, "R", 1) == 0) {
 
-   res = mysql_use_result(conn);
-   /* output table name */
-   printf("Autos in mysql database:\n");
+		/* send SQL query */
+		if (mysql_query(conn, query)) { // "SELECT * from autos"
+			fprintf(stderr, "%s\n", mysql_error(conn));
+			exit(1);
+		}
 
-	unsigned int num_fields;
-	unsigned int i;
+		res = mysql_use_result(conn);
+		/* output table name */
+		printf("Autos in mysql database:\n");
 
-	num_fields = mysql_num_fields(res);
-	while ((row = mysql_fetch_row(res)))
-	{
-	   unsigned long *lengths;
-	   lengths = mysql_fetch_lengths(res);
-	   for(i = 0; i < num_fields; i++)
-	   {
-		   printf("[%.*s] ", (int) lengths[i],
-				  row[i] ? row[i] : "NULL");
-	   }
-	   printf("\n");
+			unsigned int num_fields;
+			unsigned int i;
+
+			num_fields = mysql_num_fields(res);
+			while ((row = mysql_fetch_row(res)))
+			{
+			unsigned long *lengths;
+			lengths = mysql_fetch_lengths(res);
+			for(i = 0; i < num_fields; i++)
+			{
+				printf("[%.*s] ", (int) lengths[i],
+						row[i] ? row[i] : "NULL");
+			}
+			printf("\n");
+			}
+
+		/* close connection */
+		mysql_free_result(res);
+		mysql_close(conn);
+		write(idsockc, "Respuesta", 1024);
 	}
-
-   /* close connection */
-   mysql_free_result(res);
-   mysql_close(conn);
-   write(idsockc, "Respuesta", 1024);
+	//if() {
+		// TODO: otras queries que no sean SELECT
+	//}
 }
 
 void funcionPostgresql(int idsockc, char * query)
@@ -138,6 +150,10 @@ void funcionPostgresql(int idsockc, char * query)
 	int i,j;
 	char respuesta[BUFFER];
 	memset(respuesta, 0, BUFFER);
+	// tipo query
+	char * tipoQuery = (char *)malloc(10);
+	memset(tipoQuery, 0, 10);
+	tipoQuery = DetectarTipoQuery(query);
 
 	conn =  PQsetdbLogin(IPPostgrsql, PuertoPostgresql, NULL, NULL, "sodsql", "postgres", "toor");
 	if (PQstatus(conn) != CONNECTION_BAD)
@@ -184,8 +200,7 @@ void EjecutarQueryYEnviarResultado(int idsockc)
 	tipoDB[nb] = '\0';
 	printf("\nRecibido del cliente %d: %s \n", idsockc, tipoDB);
 
-
-
+	// Ciclo para ejecutar queries
 	while(strncmp(tipoDB, "0", 1) != 0)
 	{
 		if (strncmp(tipoDB, "1", 1) == 0) // mysql
@@ -194,7 +209,7 @@ void EjecutarQueryYEnviarResultado(int idsockc)
             nb = read(idsockc, query, BUFFER);
             printf("\nRecibido del cliente %d: query: %s \n", idsockc, query);
 
-			printf("\nEjecutamos funcion MYSQL %s \n", tipoDB);
+			printf("\nEjecutamos funcion MYSQL %s", tipoDB);
 			fflush(stdin);
 			funcionMysql(idsockc, query);
 		}
@@ -204,7 +219,7 @@ void EjecutarQueryYEnviarResultado(int idsockc)
             nb = read(idsockc, query, BUFFER);
             printf("\nRecibido del cliente %d: query: %s \n", idsockc, query);
 
-			printf("\nEjecutamos funcion POSTGRES %s \n", tipoDB);
+			printf("\nEjecutamos funcion POSTGRES %s", tipoDB);
 			fflush(stdin);
 			funcionPostgresql(idsockc, query);
 		}
@@ -242,6 +257,7 @@ void MostrarCatalogo(int idsockc){
     funcionMysql(idsockc, "SELECT table_name FROM information_schema.tables where table_schema='autosdb';");
     funcionPostgresql(idsockc, "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';");
 }
+
 void EjecutarConsultasPredefinidasMySQL(int idsockc){
     printf("\nConsultas Predefinidas MySQL:\n");
 
@@ -258,4 +274,39 @@ void EjecutarConsultasPredefinidasPostgreSQL(int idsockc){
     funcionPostgresql(idsockc, "SELECT * from employees");
     funcionPostgresql(idsockc, "SELECT * from pepe");
     funcionPostgresql(idsockc, "SELECT * from empleado");
+
+// CRUD (C=create, R=read, U=update, D=delete)
+char* DetectarTipoQuery(char* query) {
+    char create = 'C';
+    char read = 'R';
+	char update = 'U';
+    char delete = 'D';
+	char otro = 'X'; // tipo desconocido
+    char * tipoQuery = malloc(2 * sizeof(char));
+
+	char * inicioQuery = (char *)malloc(BUFFER); // max para query
+	memset(inicioQuery, 0, BUFFER);
+	strcpy(inicioQuery, query);
+
+	strtok(inicioQuery, " ");
+    if(inicioQuery == NULL) {
+		tipoQuery[0] = otro;
+	}
+	if(strncmp(inicioQuery, "SELECT", 1) == 0) {
+		tipoQuery[0] = read;
+	}
+	if(strncmp(inicioQuery, "INSERT", 1) == 0) {
+		tipoQuery[0] = create;
+	}
+	if(strncmp(inicioQuery, "UPDATE", 1) == 0) {
+		tipoQuery[0] = update;
+	}
+	if(strncmp(inicioQuery, "DELETE", 1) == 0) {
+		tipoQuery[0] = delete;
+	}
+
+	// cierro strig
+    tipoQuery[2] = '\0';
+	printf("\nTipo de query detectado: %s", tipoQuery);
+    return tipoQuery;
 }
