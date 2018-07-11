@@ -22,6 +22,7 @@ void funcionMysql(int idsockc, char * query);
 void funcionHilo(void);
 void EjecutarQueryYEnviarResultado(int idsockc);
 void MostrarCatalogo(int idsockc);
+char * DetectarTipoQuery(char * query);
 
 struct sockaddr_in c_sock;
 int idsockc=0;
@@ -172,6 +173,8 @@ void EjecutarQueryYEnviarResultado(int idsockc)
 	int nb;
 	char * tipoDB = (char *)malloc(10);
 	memset(tipoDB, 0, 10);
+	char * tipoQuery = (char *)malloc(10);
+	memset(tipoQuery, 0, 10);
     char * query = (char *)malloc(BUFFER);
 
 	printf("Conexion aceptada desde el cliente %d.\n", idsockc);
@@ -182,8 +185,7 @@ void EjecutarQueryYEnviarResultado(int idsockc)
 	tipoDB[nb] = '\0';
 	printf("\nRecibido del cliente %d: %s \n", idsockc, tipoDB);
 
-
-
+	// Ciclo para ejecutar queries
 	while(strncmp(tipoDB, "0", 1) != 0)
 	{
 		if (strncmp(tipoDB, "1", 1) == 0) // mysql
@@ -191,8 +193,9 @@ void EjecutarQueryYEnviarResultado(int idsockc)
 		    memset(query, 0, BUFFER);
             nb = read(idsockc, query, BUFFER);
             printf("\nRecibido del cliente %d: query: %s \n", idsockc, query);
+			tipoQuery = DetectarTipoQuery(query);
 
-			printf("\nEjecutamos funcion MYSQL %s \n", tipoDB);
+			printf("\nEjecutamos funcion MYSQL %s y tipo de query %s \n", tipoDB, tipoQuery);
 			fflush(stdin);
 			funcionMysql(idsockc, query);
 		}
@@ -201,8 +204,9 @@ void EjecutarQueryYEnviarResultado(int idsockc)
             memset(query, 0, BUFFER);
             nb = read(idsockc, query, BUFFER);
             printf("\nRecibido del cliente %d: query: %s \n", idsockc, query);
+			tipoQuery = DetectarTipoQuery(query);
 
-			printf("\nEjecutamos funcion POSTGRES %s \n", tipoDB);
+			printf("\nEjecutamos funcion POSTGRES %s y tipo de query %s \n", tipoDB, tipoQuery);
 			fflush(stdin);
 			funcionPostgresql(idsockc, query);
 		}
@@ -227,4 +231,30 @@ void MostrarCatalogo(int idsockc){
 
     funcionMysql(idsockc, "SELECT table_name FROM information_schema.tables where table_schema='autosdb';");
     funcionPostgresql(idsockc, "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';");
+}
+
+// CRUD (C=create, R=read, U=update, D=delete)
+char* DetectarTipoQuery(char* query) {
+    char create = 'C';
+    char read = 'R';
+	char update = 'U';
+    char delete = 'D';
+	char otro = 'X'; // tipo desconocido
+    char * tipoQuery = malloc(2 * sizeof(char));
+
+	char * inicioQuery = (char *)malloc(BUFFER); // max para query
+	memset(inicioQuery, 0, BUFFER);
+	strcpy(inicioQuery, query);
+
+	strtok(inicioQuery, " ");
+    if(inicioQuery == NULL) {
+		tipoQuery[0] = otro;
+	}
+	if(strncmp(inicioQuery, "SELECT", 1) == 0) {
+		tipoQuery[0] = read;
+	}
+
+	// cierro strig
+    tipoQuery[2] = '\0';
+    return tipoQuery;
 }
