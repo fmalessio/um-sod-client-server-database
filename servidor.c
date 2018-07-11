@@ -251,7 +251,7 @@ void EjecutarConsultasPredefinidasMySQL(int idsockc){
 }
 
 void EjecutarConsultasPredefinidasPostgreSQL(int idsockc){
-    printf("\nConsultas Predefinidas PostgreSQL:\n");
+    printf("\nConsultas Predefinidas PostgreSQL\n");
 
     write(idsockc, "3", 1);
 

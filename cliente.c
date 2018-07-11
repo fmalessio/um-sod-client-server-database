@@ -308,13 +308,13 @@ int op;
 	nb = read(idsockc, buf, 1);
 	//times = buf[i++];
 	buf[nb] = '\0';
-	printf("\nCantidad de consutlas: \n %s", buf);
+	printf("\nCantidad de consutlas: %s", buf);
 	//printf("\nCantidad de consutlas: \n %d", times);
 
     for(i=0; i<3; i++){
         nb = read(idsockc, buf, BUFFER);
         buf[nb] = '\0';
-        printf("\nConsulta: \n %s", buf);
+        printf("\nConsulta tabla %d: \n%s", i, buf);
     }
 
 	printf("\nPresione una tecla para volver.");
