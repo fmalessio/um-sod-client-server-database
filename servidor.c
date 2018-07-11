@@ -77,6 +77,10 @@ void funcionMysql(int idsockc, char * query)
 	char *password = "toor";
 	char *database = "autosdb";
 	int nb;
+	// tipo query
+	char * tipoQuery = (char *)malloc(10);
+	memset(tipoQuery, 0, 10);
+	tipoQuery = DetectarTipoQuery(query);
 
 	conn = mysql_init(NULL);
    /* Connect to database */
@@ -98,36 +102,43 @@ void funcionMysql(int idsockc, char * query)
 //   while ((row = mysql_fetch_row(res)) != NULL)
 //      printf("%s \n", row[0]);
 
-   /* send SQL query */
-   if (mysql_query(conn, query)) { // "SELECT * from autos"
-      fprintf(stderr, "%s\n", mysql_error(conn));
-      exit(1);
-   }
+	// TODO: pasar esto a funciones MySQLResulado(R=read), MySQLSinResultado(C,U,D)
+	if(strncmp(tipoQuery, "R", 1) == 0) {
 
-   res = mysql_use_result(conn);
-   /* output table name */
-   printf("Autos in mysql database:\n");
+		/* send SQL query */
+		if (mysql_query(conn, query)) { // "SELECT * from autos"
+			fprintf(stderr, "%s\n", mysql_error(conn));
+			exit(1);
+		}
 
-	unsigned int num_fields;
-	unsigned int i;
+		res = mysql_use_result(conn);
+		/* output table name */
+		printf("Autos in mysql database:\n");
 
-	num_fields = mysql_num_fields(res);
-	while ((row = mysql_fetch_row(res)))
-	{
-	   unsigned long *lengths;
-	   lengths = mysql_fetch_lengths(res);
-	   for(i = 0; i < num_fields; i++)
-	   {
-		   printf("[%.*s] ", (int) lengths[i],
-				  row[i] ? row[i] : "NULL");
-	   }
-	   printf("\n");
+			unsigned int num_fields;
+			unsigned int i;
+
+			num_fields = mysql_num_fields(res);
+			while ((row = mysql_fetch_row(res)))
+			{
+			unsigned long *lengths;
+			lengths = mysql_fetch_lengths(res);
+			for(i = 0; i < num_fields; i++)
+			{
+				printf("[%.*s] ", (int) lengths[i],
+						row[i] ? row[i] : "NULL");
+			}
+			printf("\n");
+			}
+
+		/* close connection */
+		mysql_free_result(res);
+		mysql_close(conn);
+		write(idsockc, "Respuesta", 1024);
 	}
-
-   /* close connection */
-   mysql_free_result(res);
-   mysql_close(conn);
-   write(idsockc, "Respuesta", 1024);
+	//if() {
+		// TODO: otras queries que no sean SELECT
+	//}
 }
 
 void funcionPostgresql(int idsockc, char * query)
@@ -137,6 +148,10 @@ void funcionPostgresql(int idsockc, char * query)
 	int i,j;
 	char respuesta[BUFFER];
 	memset(respuesta, 0, BUFFER);
+	// tipo query
+	char * tipoQuery = (char *)malloc(10);
+	memset(tipoQuery, 0, 10);
+	tipoQuery = DetectarTipoQuery(query);
 
 	conn =  PQsetdbLogin(IPPostgrsql, PuertoPostgresql, NULL, NULL, "sodsql", "postgres", "toor");
 	if (PQstatus(conn) != CONNECTION_BAD)
@@ -173,8 +188,6 @@ void EjecutarQueryYEnviarResultado(int idsockc)
 	int nb;
 	char * tipoDB = (char *)malloc(10);
 	memset(tipoDB, 0, 10);
-	char * tipoQuery = (char *)malloc(10);
-	memset(tipoQuery, 0, 10);
     char * query = (char *)malloc(BUFFER);
 
 	printf("Conexion aceptada desde el cliente %d.\n", idsockc);
@@ -193,9 +206,8 @@ void EjecutarQueryYEnviarResultado(int idsockc)
 		    memset(query, 0, BUFFER);
             nb = read(idsockc, query, BUFFER);
             printf("\nRecibido del cliente %d: query: %s \n", idsockc, query);
-			tipoQuery = DetectarTipoQuery(query);
 
-			printf("\nEjecutamos funcion MYSQL %s y tipo de query %s \n", tipoDB, tipoQuery);
+			printf("\nEjecutamos funcion MYSQL %s", tipoDB);
 			fflush(stdin);
 			funcionMysql(idsockc, query);
 		}
@@ -204,9 +216,8 @@ void EjecutarQueryYEnviarResultado(int idsockc)
             memset(query, 0, BUFFER);
             nb = read(idsockc, query, BUFFER);
             printf("\nRecibido del cliente %d: query: %s \n", idsockc, query);
-			tipoQuery = DetectarTipoQuery(query);
 
-			printf("\nEjecutamos funcion POSTGRES %s y tipo de query %s \n", tipoDB, tipoQuery);
+			printf("\nEjecutamos funcion POSTGRES %s", tipoDB);
 			fflush(stdin);
 			funcionPostgresql(idsockc, query);
 		}
@@ -253,8 +264,18 @@ char* DetectarTipoQuery(char* query) {
 	if(strncmp(inicioQuery, "SELECT", 1) == 0) {
 		tipoQuery[0] = read;
 	}
+	if(strncmp(inicioQuery, "INSERT", 1) == 0) {
+		tipoQuery[0] = create;
+	}
+	if(strncmp(inicioQuery, "UPDATE", 1) == 0) {
+		tipoQuery[0] = update;
+	}
+	if(strncmp(inicioQuery, "DELETE", 1) == 0) {
+		tipoQuery[0] = delete;
+	}
 
 	// cierro strig
     tipoQuery[2] = '\0';
+	printf("\nTipo de query detectado: %s", tipoQuery);
     return tipoQuery;
 }
