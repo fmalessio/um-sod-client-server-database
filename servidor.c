@@ -274,7 +274,7 @@ void EjecutarConsultasPredefinidasPostgreSQL(int idsockc){
     funcionPostgresql(idsockc, "SELECT * from employees");
     funcionPostgresql(idsockc, "SELECT * from pepe");
     funcionPostgresql(idsockc, "SELECT * from empleado");
-
+}
 // CRUD (C=create, R=read, U=update, D=delete)
 char* DetectarTipoQuery(char* query) {
     char create = 'C';

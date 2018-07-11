@@ -307,8 +307,7 @@ int op;
 	nb = read(idsockc, buf, 1);
 	times = buf[0]-48;
 	buf[nb] = '\0';
-	printf("\nCantidad de consutlas: %s", buf);
-	printf("\nCantidad de consutlas: \n %d", times);
+	printf("\nCantidad de consutlas: %d\n", times);
 
     for(i=0; i<times; i++){
         nb = read(idsockc, buf, BUFFER);
