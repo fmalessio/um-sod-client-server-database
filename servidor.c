@@ -81,7 +81,6 @@ void funcionMysql(int idsockc, char * query)
 	// tipo query
 	char * tipoQuery = (char *)malloc(10);
 	memset(tipoQuery, 0, 10);
-	tipoQuery = DetectarTipoQuery(query);
 
     char * respuesta = (char *)malloc(BUFFER);
     memset(respuesta, 0, BUFFER);
@@ -116,20 +115,23 @@ void funcionMysql(int idsockc, char * query)
         unsigned int num_fields;
         unsigned int i;
 		num_fields = mysql_num_fields(res);
-		while ((row = mysql_fetch_row(res)))
-		{
-			unsigned long *lengths;
-			lengths = mysql_fetch_lengths(res);
-			for(i = 0; i < num_fields; i++)
-			{
-				printf("[%.*s] ", (int) lengths[i],
-						row[i] ? row[i] : "NULL");
-			}
-			printf("\n");
-		}
+        while ((row = mysql_fetch_row(res)))
+        {
+            unsigned long *lengths;
+            lengths = mysql_fetch_lengths(res);
+            for(i = 0; i < num_fields; i++)
+            {
+                //printf("[%.*s] ", (int) lengths[i], row[i] ? row[i] : "NULL");
+                    //strcat(respuesta, row[i]);
+                    strcat(respuesta, row[i]);
+                    strcat(respuesta, "\t");
+            }
+            strcat(respuesta, "\n");
+        }
+        printf("%s\n", respuesta);
 
 		mysql_free_result(res);
-		write(idsockc, "Respuesta", BUFFER);
+        write(idsockc, respuesta, BUFFER);
 	}	
 	else {
 		// (C,U,D): otras queries sin resultado
@@ -283,7 +285,7 @@ void EjecutarQueryYEnviarResultado(int idsockc)
         nb = read(idsockc, tipoDB, BUFFER);
         buf[nb]='\0';
         printf("\nRecibido del cliente %d: %s\n", idsockc, tipoDB);
-        }
+    }
     printf("\nCerrando conexión del cliente %d.\n", idsockc);
     close(idsockc);
 }
