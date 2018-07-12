@@ -146,16 +146,28 @@ void funcionMysql(int idsockc, char * query)
 		{
 			printf("mysql_stmt_prepare(), failed\r\n");
 			printf("Error: %s\r\n", mysql_stmt_error(stmt));
-			mysql_close(conn);
+            write(idsockc, mysql_stmt_error(stmt), BUFFER);
+            mysql_close(conn);
 			return;
 		}
+        /* Ejecutar query */
 		if (mysql_stmt_execute(stmt))
 		{
 			printf("mysql_stmt_execute(), failed\r\n");
 			printf("%s\r\n", mysql_stmt_error(stmt));
-			mysql_close(conn);
+            write(idsockc, mysql_stmt_error(stmt), BUFFER);
+            mysql_close(conn);
 			return;
 		}
+        /* Cerrar statement */
+        if (mysql_stmt_close(stmt))
+        {
+            printf("Error cerrando statement\r\n");
+            printf("%s\r\n", mysql_stmt_error(stmt));
+            write(idsockc, mysql_stmt_error(stmt), BUFFER);
+            mysql_close(conn);
+			return;
+        }
 
 		write(idsockc, "Query ejecutada corractamente.", BUFFER);
 	}
