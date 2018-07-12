@@ -231,7 +231,7 @@ void EnviarQuery(int idsockc)
 	// Recibe el nombre del archivo
 	nb = read(idsockc, buf, BUFFER);
 	buf[nb] = '\0';
-	printf("\nResultado de la query \n %s", buf);
+	printf("\nResultado de la query \n%s", buf);
 
 	printf("\nPresione una tecla para volver.");
 	getchar();
@@ -260,11 +260,11 @@ void MostrarCatalogo(int idsockc)
     sleep(1);
     nb = read(idsockc, buf, BUFFER);
 	buf[nb] = '\0';
-	printf("\nCatalogo MySQL: \n %s", buf);
+	printf("\nCatalogo MySQL: \n%s", buf);
 
 	nb = read(idsockc, buf, BUFFER);
 	buf[nb] = '\0';
-	printf("\nCatalogo PostgreSQL: \n %s", buf);
+	printf("\nCatalogo PostgreSQL: \n%s", buf);
 
 	printf("\nPresione una tecla para volver.");
 	getchar();
