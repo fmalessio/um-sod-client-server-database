@@ -100,7 +100,7 @@ void funcionMysql(int idsockc, char * query)
 	if(strncmp(tipoQuery, "R", 1) == 0) {
 
         /* Ejecucion de query */
-        if (mysql_query(conn, query)) {
+        if (mysql_query(conn, query)) { // "SELECT * from autos"
             fprintf(stderr, "%s\n", mysql_error(conn));
             // exit(1);
             write(idsockc, mysql_error(conn), BUFFER);
@@ -109,16 +109,12 @@ void funcionMysql(int idsockc, char * query)
             return;
         }
 
-        /* send SQL query */
-        if (mysql_query(conn, query)) { // "SELECT * from autos"
-            fprintf(stderr, "%s\n", mysql_error(conn));
-            exit(1);
-        }
-
         res = mysql_use_result(conn);
         /* output table name */
-        printf("\nAutos in mysql database: ");
+        printf("\nAutos in mysql database: \n");
 
+        unsigned int num_fields;
+        unsigned int i;
 		num_fields = mysql_num_fields(res);
 		while ((row = mysql_fetch_row(res)))
 		{
