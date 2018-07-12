@@ -78,7 +78,6 @@ void funcionMysql(int idsockc, char * query)
 	char *user = "root";
 	char *password = "toor";
 	char *database = "autosdb";
-	int nb;
 	// tipo query
 	char * tipoQuery = (char *)malloc(10);
 	memset(tipoQuery, 0, 10);
@@ -104,25 +103,29 @@ void funcionMysql(int idsockc, char * query)
 //   while ((row = mysql_fetch_row(res)) != NULL)
 //      printf("%s \n", row[0]);
 
-	// TODO: pasar esto a funciones MySQLResulado(R=read), MySQLSinResultado(C,U,D)
+	// (R=read)? 
+	// Ejemplo: "SELECT * from autos"
 	if(strncmp(tipoQuery, "R", 1) == 0) {
-
-		/* send SQL query */
-		if (mysql_query(conn, query)) { // "SELECT * from autos"
+		/* Ejecucion de query */
+		if (mysql_query(conn, query)) {
 			fprintf(stderr, "%s\n", mysql_error(conn));
-			exit(1);
+			// exit(1);
+			write(idsockc, mysql_error(conn), BUFFER);
+			/* close connection */
+			mysql_close(conn);
+			return;
 		}
 
 		res = mysql_use_result(conn);
 		/* output table name */
 		printf("Autos in mysql database:\n");
 
-			unsigned int num_fields;
-			unsigned int i;
+		unsigned int num_fields;
+		unsigned int i;
 
-			num_fields = mysql_num_fields(res);
-			while ((row = mysql_fetch_row(res)))
-			{
+		num_fields = mysql_num_fields(res);
+		while ((row = mysql_fetch_row(res)))
+		{
 			unsigned long *lengths;
 			lengths = mysql_fetch_lengths(res);
 			for(i = 0; i < num_fields; i++)
@@ -131,16 +134,45 @@ void funcionMysql(int idsockc, char * query)
 						row[i] ? row[i] : "NULL");
 			}
 			printf("\n");
-			}
+		}
 
-		/* close connection */
 		mysql_free_result(res);
-		mysql_close(conn);
-		write(idsockc, "Respuesta", 1024);
+		write(idsockc, "Respuesta", BUFFER);
+	}	
+	else {
+		// (C,U,D): otras queries sin resultado
+		// Ejemplo: "UPDATE autos SET color = 'rojo' WHERE id = 1"
+		MYSQL_STMT  * stmt;
+		stmt = mysql_stmt_init(conn);
+		if (!stmt)
+		{
+			printf(" mysql_stmt_init(), Out of memory\r\n");
+			mysql_close(conn);
+			return;
+		}
+		if (mysql_stmt_prepare(stmt, query, strlen(query)))
+		{
+			printf("mysql_stmt_prepare(), failed\r\n");
+			printf("Error: %s\r\n", mysql_stmt_error(stmt));
+			mysql_close(conn);
+			return;
+		}
+		if (mysql_stmt_execute(stmt))
+		{
+			printf("mysql_stmt_execute(), failed\r\n");
+			printf("%s\r\n", mysql_stmt_error(stmt));
+			mysql_close(conn);
+			return;
+		}
+
+		write(idsockc, "Query ejecutada corractamente.", BUFFER);
 	}
-	//if() {
-		// TODO: otras queries que no sean SELECT
-	//}
+
+	// TODO: escribir "fin" en idsockc
+
+	/* close connection */
+	mysql_close(conn);
+	printf("\nFin ejecución MySQL correcto");
 }
 
 void funcionPostgresql(int idsockc, char * query)
@@ -275,6 +307,7 @@ void EjecutarConsultasPredefinidasPostgreSQL(int idsockc){
     funcionPostgresql(idsockc, "SELECT * from pepe");
     funcionPostgresql(idsockc, "SELECT * from empleado");
 }
+
 // CRUD (C=create, R=read, U=update, D=delete)
 char* DetectarTipoQuery(char* query) {
     char create = 'C';
@@ -305,7 +338,7 @@ char* DetectarTipoQuery(char* query) {
 		tipoQuery[0] = delete;
 	}
 
-	// cierro strig
+	// cierro string
     tipoQuery[2] = '\0';
 	printf("\nTipo de query detectado: %s", tipoQuery);
     return tipoQuery;
