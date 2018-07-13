@@ -25,6 +25,8 @@ void MostrarCatalogo(int idsockc);
 void EjecutarConsultasPredefinidasPostgreSQL(int idsockc);
 void EjecutarConsultasPredefinidasMySQL(int idsockc);
 char * DetectarTipoQuery(char * query);
+FILE * log_file;
+void logger(char * message);
 
 struct sockaddr_in c_sock;
 int idsockc=0;
@@ -44,6 +46,8 @@ int main(int argc, char *argv[])
     printf("bind %d\n", bind(idsocks,(struct sockaddr *) &s_sock,lensock));
     printf("listen %d\n", listen(idsocks,5));
 
+    logger("Iniciando la aplicacion");
+
     while(1)
     {
         printf("Servidor esperando conexion...\n");
@@ -59,11 +63,12 @@ int main(int argc, char *argv[])
         }
     }
 
-    return 0 ;
+    return 0;
 }
 
 void funcionHilo(void)
 {
+    logger("Hilo creado");
     EjecutarQueryYEnviarResultado(idsockc);
     pthread_exit(0);
 }
@@ -107,7 +112,6 @@ void funcionMysql(int idsockc, char * query)
         }
 
         res = mysql_use_result(conn);
-        // TODO: log printf("\nAutos in mysql database: \n");
 
         unsigned int num_fields;
         unsigned int i;
@@ -169,6 +173,7 @@ void funcionMysql(int idsockc, char * query)
 
 	/* Cerramos conexion */
 	mysql_close(conn);
+    logger("MySQL termino con exito");
 	printf("\nFin ejecución MySQL correcto");
 }
 
@@ -230,7 +235,7 @@ void funcionPostgresql(int idsockc, char * query)
 
     // Cerramos conexion
     PQfinish(conn);
-
+    logger("Postgres termino con exito");
     write(idsockc, respuesta, BUFFER);
 }
 
@@ -255,9 +260,11 @@ void EjecutarQueryYEnviarResultado(int idsockc)
     {
         if (strncmp(tipoDB, "1", 1) == 0) // mysql
         {
+            logger("MySQL seleccionado");
             memset(query, 0, BUFFER);
             nb = read(idsockc, query, BUFFER);
             printf("\nRecibido del cliente %d: query: %s \n", idsockc, query);
+            logger(query);
 
             printf("\nEjecutamos funcion MYSQL %s", tipoDB);
             fflush(stdin);
@@ -265,9 +272,11 @@ void EjecutarQueryYEnviarResultado(int idsockc)
         }
         if (strncmp(tipoDB, "2", 1) == 0) // postgres
         {
+            logger("PostgreSQL seleccionado");
             memset(query, 0, BUFFER);
             nb = read(idsockc, query, BUFFER);
             printf("\nRecibido del cliente %d: query: %s \n", idsockc, query);
+            logger(query);
 
             printf("\nEjecutamos funcion POSTGRES %s", tipoDB);
             fflush(stdin);
@@ -275,6 +284,7 @@ void EjecutarQueryYEnviarResultado(int idsockc)
         }
         if (strncmp(tipoDB, "3", 1) == 0) // catalogo
         {
+            logger("Se ha ejecutado mostrar catalogo");
             printf("\nEjecutamos print de catalogo \n");
             fflush(stdin);
             MostrarCatalogo(idsockc);
@@ -361,4 +371,13 @@ char* DetectarTipoQuery(char* query) {
     tipoQuery[2] = '\0';
     printf("\nTipo de query detectado: %s", tipoQuery);
     return tipoQuery;
+}
+
+void logger(char * message) {
+    log_file = fopen("log.log", "a+");
+    if(log_file) {
+        fputs("\n", log_file);
+        fputs(message, log_file);
+        fclose(log_file);
+    }
 }
