@@ -14,9 +14,6 @@
 #define BUFFER 1024
 
 void EnviarQuery(int idsockc);
-void EnviarRecibirMensaje(int idsockc, char *msj);
-void EditarArchivo();
-void EnviarArchivoServidor(int idsockc);
 void MostrarCatalogo(int idsockc);
 void EjecutarQueryPredefinida(int idsockc);
 char* SeleccionarBase();
@@ -86,23 +83,6 @@ int main (int argc, char *argv[])
 	close(idsockc);
 }
 
-void EnviarRecibirMensaje(int idsockc, char *msj)
-{
-	int nb;
-	char buf[BUFFER];
-	// Envia mensaje
-	nb=strlen(msj);
-	printf("Mensaje a enviar al servidor %d: %s\n",idsockc,msj);
-	write(idsockc,msj,nb);
-
-	sleep(1);
-
-	// Recibe respuesta
-	nb=read(idsockc,buf,BUFFER);
-	buf[nb]='\0';
-	printf("Recibido del servidor %d: %s\n", idsockc, buf);
-}
-
 char* SeleccionarBase()
 {
 	char * op = (char *) malloc(2);
@@ -122,12 +102,6 @@ char* SeleccionarBase()
 
 void EnviarQuery(int idsockc)
 {
-	//char* opDB = (char *) malloc(2);
-	//memset(opDB, 0, 2);
-
-	//strcpy(opDB, SeleccionarBase());
-	//char * op = (char *) malloc(1);
-	//memset(op, 0, 1);
 	int op;
 	system("clear");
 	printf("************** \n");
@@ -141,8 +115,7 @@ void EnviarQuery(int idsockc)
 
 	printf("\nBase de datos selccionada %d: ", op);
 
-	// Escribimos comando para enviar un archivo
-
+	// Seleccionamos opcion del menu
 	if(op == 1){
 		write(idsockc, "1", 1);
 	}
@@ -155,35 +128,14 @@ void EnviarQuery(int idsockc)
 			return;
 		}
 	}
-	// sleep(2);
 
 	char * buf = (char *)malloc(BUFFER);
 	int nb;
-	char * nombreArchivo = (char *)malloc(50);
-	memset(nombreArchivo, 0, 50);
-	FILE *archivo;
-
-	//char * query = (char *)malloc(BUFFER);
-	//memset(query, 0, BUFFER);
 
 	char query[2048];
 	char enter;
 
-	/*printf("Lista de archivos disponibles: \n");
-	system("ls");
-	printf("Ingrese el nombre del archivo que quiere enviar: \n");
-
-	scanf("%s", &nombreArchivo[0]);
-
-	if((archivo = fopen(nombreArchivo, "rb")) == NULL)
-	{
-		printf("\nNo se puede abrir el archivo!");
-		exit(0);
-	}*/
-
- 	// strcpy(query, "select * from empleado");
 	printf("\nIngrese la query: \n");
-	//fflush(stdin);
 	scanf("%c", &enter);
 	gets(query);
 
@@ -192,43 +144,7 @@ void EnviarQuery(int idsockc)
 
 	sleep(1);
 
-	/*int seguirEnviando = 0;
-	buf[0]='\0';
-	printf("\nBuffer1... %s \n", buf);
-	// Leemos la data y la enviamos
-	while(seguirEnviando == 0)
-	{
-		// Particionamos el archivo en 256 bytes
-		// unsigned char buff[1024] = {0};
-		int nread = fread(buf, 1, BUFFER, archivo);
-		printf("\nBuffer2... %s \n", buf);
-		printf("\nBytes leidos %d \n", nread);
-
-		if(nread > 0)
-		{
-			printf("Enviando... \n");
-			write(idsockc, buf, nread);
-		}
-		if (nread < BUFFER)
-		{
-			if (feof(archivo))
-			{
-				printf("End of file\n");
-				printf("File transfer completed for id: %d\n", idsockc);
-				sleep(1);
-				write(idsockc, "fin", 3);
-			}
-			if (ferror(archivo))
-				printf("Error reading\n");
-
-			printf("1\n");
-			seguirEnviando++;
-			fclose(archivo);
-			printf("2\n");
-		}
-	}*/
-
-	// Recibe el nombre del archivo
+	// Recibe el resultado de la query
 	nb = read(idsockc, buf, BUFFER);
 	buf[nb] = '\0';
 	printf("\nResultado de la query \n%s", buf);
@@ -236,27 +152,13 @@ void EnviarQuery(int idsockc)
 	printf("\nPresione una tecla para volver.");
 	getchar();
 	getchar();
-
 }
 
-void EditarArchivo() {
-	char * nombreArchivo = (char *) malloc(50);
-	memset(nombreArchivo, 0, 50);
-
-	printf("Lista de archivos disponibles: \n");
-	system("ls");
-	printf("Ingrese el nombre del archivo que quiere enviar: \n");
-
-	scanf("%s", &nombreArchivo[0]);
-
-	// Abrimos la edicion
-	system("gedit archivo1.txt");
-}
 void MostrarCatalogo(int idsockc)
 {
     char * buf = (char *)malloc(BUFFER);
 	int nb;
-    write(idsockc, "3", 1);//mostrar catalogo
+    write(idsockc, "3", 1);
     sleep(1);
     nb = read(idsockc, buf, BUFFER);
 	buf[nb] = '\0';
@@ -272,7 +174,7 @@ void MostrarCatalogo(int idsockc)
 }
 
 void EjecutarQueryPredefinida(int idsockc){
-int op;
+	int op;
 	system("clear");
 	printf("************** \n");
 	printf("\nEjecutar query predefinida para:\n");
@@ -286,7 +188,7 @@ int op;
 
 	printf("\nBase de datos selccionada %d: ", op);
 
-	// Escribimos comando para enviar un archivo
+	// Seleccionamos opcion del menu
 	if(op == 1){
 		write(idsockc, "4", 1);
 	}
@@ -307,7 +209,6 @@ int op;
 	nb = read(idsockc, buf, 1);
 	times = buf[0]-48;
 	buf[nb] = '\0';
-	printf("\nCantidad de consutlas: %d\n", times);
 
     for(i=0; i<times; i++){
         nb = read(idsockc, buf, BUFFER);
