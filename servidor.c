@@ -289,9 +289,9 @@ void EjecutarQueryYEnviarResultado(int idsockc)
             fflush(stdin);
             MostrarCatalogo(idsockc);
         }
-        if ( (strncmp(tipoDB, "4", 1) == 0) || (strncmp(tipoDB, "5", 1) == 0)) // catalogo
+        if ( (strncmp(tipoDB, "4", 1) == 0) || (strncmp(tipoDB, "5", 1) == 0)) // query predefinida
         {
-            printf("\nEjecutamos print de catalogo \n");
+            printf("\nEjecutamos print de query predefinida \n");
             fflush(stdin);
             if(strncmp(tipoDB, "4", 1) == 0){
                 EjecutarConsultasPredefinidasMySQL(idsockc);
