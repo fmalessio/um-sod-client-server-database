@@ -332,7 +332,7 @@ void EjecutarConsultasPredefinidasMySQL(int idsockc){
 void EjecutarConsultasPredefinidasPostgreSQL(int idsockc){
     printf("\nConsultas Predefinidas PostgreSQL\n");
 
-    write(idsockc, "5", 1); // para mas de 9 revisar
+    write(idsockc, "5", 1);
 
     funcionPostgresql(idsockc, "SELECT * from alumno");
     funcionPostgresql(idsockc, "SELECT * from profesor");
