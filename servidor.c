@@ -192,24 +192,31 @@ void funcionPostgresql(int idsockc, char * query)
         // Ejecutamos query
         res = PQexec(conn, query);
 
-        // R: read. Ejemplo: "SELECT * FROM employees"
-        if (res != NULL && PGRES_TUPLES_OK == PQresultStatus(res))
-        {
-            for (i = 0 ; i <= PQntuples(res)-1;  i++)
+	    if(strncmp(tipoQuery, "R", 1) == 0) {
+            // R: read. Ejemplo: "SELECT * FROM employees"
+            if (res != NULL && PGRES_TUPLES_OK == PQresultStatus(res))
             {
-                for (j = 0 ; j < PQnfields(res); j++)
+                for (i = 0 ; i <= PQntuples(res)-1;  i++)
                 {
-                    strcat(respuesta,PQgetvalue(res,i,j));
-                    strcat(respuesta,"\t");
-                    printf("%s\t", PQgetvalue(res,i,j));
+                    for (j = 0 ; j < PQnfields(res); j++)
+                    {
+                        strcat(respuesta,PQgetvalue(res,i,j));
+                        strcat(respuesta,"\t");
+                        printf("%s\t", PQgetvalue(res,i,j));
+                    }
+                    strcat(respuesta,"\n");
+                    printf("\n");
                 }
-                strcat(respuesta,"\n");
-                printf("\n");
+                strcat(respuesta,"\0");
+                PQclear(res);
+            } else {
+                printf("Fallo query");
             }
+        }
+        else {
+            // C: create, U: update, D: delete.
+            strcat(respuesta, "Query ejecutada corractamente.");
             strcat(respuesta,"\0");
-            PQclear(res);
-        } else {
-            printf("Fallo query");
         }
     } else {
         printf("Fallo conexion");
