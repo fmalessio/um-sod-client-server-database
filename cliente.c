@@ -47,7 +47,7 @@ int main (int argc, char *argv[])
 			printf("************** \n");
 			printf("1. Ejecutar Query Manual \n");
 			printf("2. Mostrar Catálogo \n");
-			printf("3. Ejecutar Query Predefinida\n");
+			printf("3. Mostrar contenido de tablas\n");
 			printf("0. Salir \n");
 			printf("\n\nOpcion: ");
 
