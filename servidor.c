@@ -215,7 +215,13 @@ void funcionPostgresql(int idsockc, char * query)
         }
         else {
             // C: create, U: update, D: delete.
-            strcat(respuesta, "Query ejecutada corractamente.");
+            if(res != NULL && PGRES_COMMAND_OK == PQresultStatus(res))
+            {
+                strcat(respuesta, "Query ejecutada corractamente.");                
+            } else
+            {
+                strcat(respuesta, "Error ejecutando la query.");
+            }
             strcat(respuesta,"\0");
         }
     } else {
