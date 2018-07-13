@@ -129,7 +129,7 @@ void funcionMysql(int idsockc, char * query)
 
 		mysql_free_result(res);
         write(idsockc, respuesta, BUFFER);
-	}	
+	}
 	else {
 		// C: create, U: update, D: delete.
         // Ejemplo: "UPDATE autos SET color = 'rojo' WHERE id = 1"
@@ -222,7 +222,7 @@ void funcionPostgresql(int idsockc, char * query)
             // C: create, U: update, D: delete.
             if(res != NULL && PGRES_COMMAND_OK == PQresultStatus(res))
             {
-                strcat(respuesta, "Query ejecutada corractamente.");                
+                strcat(respuesta, "Query ejecutada corractamente.");
             } else
             {
                 strcat(respuesta, "Error ejecutando la query.");
@@ -322,19 +322,23 @@ void MostrarCatalogo(int idsockc){
 void EjecutarConsultasPredefinidasMySQL(int idsockc){
     printf("\nConsultas Predefinidas MySQL:\n");
 
-    write(idsockc, "1", 1);
+    write(idsockc, "3", 1);
 
     funcionMysql(idsockc, "SELECT * from autos");
+    funcionMysql(idsockc, "SELECT * from concesionaria");
+    funcionMysql(idsockc, "SELECT * from garage");
 }
 
 void EjecutarConsultasPredefinidasPostgreSQL(int idsockc){
     printf("\nConsultas Predefinidas PostgreSQL\n");
 
-    write(idsockc, "3", 1); // para mas de 9 revisar
+    write(idsockc, "5", 1); // para mas de 9 revisar
 
-    funcionPostgresql(idsockc, "SELECT * from employees");
-    funcionPostgresql(idsockc, "SELECT * from pepe");
-    funcionPostgresql(idsockc, "SELECT * from empleado");
+    funcionPostgresql(idsockc, "SELECT * from alumno");
+    funcionPostgresql(idsockc, "SELECT * from profesor");
+    funcionPostgresql(idsockc, "SELECT * from materia");
+    funcionPostgresql(idsockc, "SELECT * from comisionAlumnos");
+    funcionPostgresql(idsockc, "SELECT * from comisionProfesor");
 }
 
 // CRUD (C=create, R=read, U=update, D=delete)
